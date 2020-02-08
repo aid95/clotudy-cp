@@ -16,12 +16,12 @@ type Service struct {
 	cableID string
 }
 
-func newService(conn *websocket.Conn, requestId string) {
+func newService(conn *websocket.Conn, requestID string) {
 	// 새로운 서비스 생성
 	s := &Service{
 		conn:    conn,
 		send:    make(chan *CompileRequest, compileBufferSize),
-		cableID: requestId,
+		cableID: requestID,
 	}
 	// 서비스 목록에 추가
 	services = append(services, s)
