@@ -1,29 +1,28 @@
 package main
 
 import (
-	"github.com/mholt/binding"
 	"net/http"
 	"time"
+
+	"github.com/mholt/binding"
 
 	"gopkg.in/mgo.v2/bson"
 )
 
 // CompileRequest 컴파일 정보를 위한 구조체
 type CompileRequest struct {
-	// create() initialize
 	ID         bson.ObjectId `bson:"_id" json:"id"`
 	CreatedAt  time.Time     `bson:"created_at" json:"created_at"`
-	// FieldMap mapping
 	SourceCode string        `bson:"source_code" json:"source_code"`
-	SourceType string        `bson:"source_type" json:"source_type"`
-	// uninitialized
-	CableID bson.ObjectId `bson:"request_id" json:"request_id"`
+	LangType   int           `bson:"source_type" json:"source_type"`
+	CableID    bson.ObjectId `bson:"request_id" json:"request_id"`
 }
 
+// FieldMap 웹소켓으로 보내진 데이터를 CompileRequest 구조체의 요소와 맵핑
 func (c *CompileRequest) FieldMap(r *http.Request) binding.FieldMap {
 	return binding.FieldMap{
 		&c.SourceCode: "src",
-		&c.SourceType: "type",
+		&c.LangType:   "type",
 	}
 }
 
