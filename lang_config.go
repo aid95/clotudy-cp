@@ -21,6 +21,8 @@ func (l *LangProperties) init() error {
 	if err != nil {
 		return err
 	}
+	MakePathDir(filepath.Join(path, "src"))
+	MakePathDir(filepath.Join(path, "bin"))
 
 	// 컴파일 시 필요한 파일 이름, 확장자, 경로 등을 설정
 	l.BasePath = path
