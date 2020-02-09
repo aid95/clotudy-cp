@@ -58,10 +58,14 @@ func (l *LangProperties) init() error {
 
 // ExecuteRule 실행을 위한 정보
 type ExecuteRule struct {
-	Cmd        string `bson:"command_line" json:"command_line"`
-	CmdOption  string `bson:"command_option" json:"command_option"`
-	MaxMem     int64  `bson:"max_memory" json:"max_memory"`
-	MaxCPUTime int64  `bson:"max_cpu_time" json:"max_cpu_time"`
+	Cmd        string   `bson:"command_line" json:"command_line"`
+	CmdOption  []string `bson:"command_option" json:"command_option"`
+	MaxMem     int64    `bson:"max_memory" json:"max_memory"`
+	MaxCPUTime int64    `bson:"max_cpu_time" json:"max_cpu_time"`
+}
+
+func (e *ExecuteRule) Run() (error, string, string) {
+	return RunCommandLine(e.Cmd, e.CmdOption)
 }
 
 // CompileRule 컴파일 조건 및 명령행을 위한 정보
@@ -71,4 +75,8 @@ type CompileRule struct {
 	MaxFileSize   int64    `bson:"max_file_size" json:"max_file_size"`
 	SourceCode    string   `bson:"source_code" json:"source_code"`
 	LangType      int      `bson:"source_type" json:"source_type"`
+}
+
+func (c *CompileRule) Run() (error, string, string) {
+	return RunCommandLine(c.Compiler, c.CompileOption)
 }
