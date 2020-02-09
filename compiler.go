@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/mholt/binding"
@@ -35,15 +38,15 @@ type CompileRequest struct {
 // FieldMap 웹소켓으로 보내진 데이터를 CompileRequest 구조체의 요소와 맵핑
 func (c *CompileRequest) FieldMap(r *http.Request) binding.FieldMap {
 	return binding.FieldMap{
-		&c.LangProperties.CompileRule.SourceCode: "src",
-		&c.LangProperties.CompileRule.LangType:   "type",
+		&c.SourceCode: "src",
+		&c.SourceType: "type",
 	}
 }
 
 func (c *CompileRequest) create() {
 	c.ID = bson.NewObjectId()
 	c.CreatedAt = time.Now()
-	c.LangProperties.init()
+	c.init()
 }
 
 func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
@@ -66,7 +69,59 @@ func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 	er := &ExecuteResponse{}
 	_, er.CompileOut, er.CompileErr = c.LangProperties.CompileRule.Run()
 	_, er.ExecuteOut, er.ExecuteErr = c.LangProperties.ExecuteRule.Run()
-	os.RemoveAll(c.LangProperties.BasePath)
+	// os.RemoveAll(c.LangProperties.BasePath)
 
 	return er
+}
+
+func (c *CompileRequest) init() error {
+	filename := Md5HashGen("code")
+	path, err := MakePathDir(filepath.Join(BaseDirPath, Md5HashGen("test")))
+	if err != nil {
+		return err
+	}
+	MakePathDir(filepath.Join(path, "src"))
+	MakePathDir(filepath.Join(path, "bin"))
+
+	// 컴파일 시 필요한 파일 이름, 확장자, 경로 등을 설정
+	c.LangProperties.BasePath = path
+	c.LangProperties.SourcePath = fmt.Sprintf("%s/src/%s", c.LangProperties.BasePath, filename)
+	c.LangProperties.BinaryPath = fmt.Sprintf("%s/bin/%s", c.LangProperties.BasePath, filename)
+	switch c.SourceType {
+	case C:
+		c.LangProperties.SourcePath += ".c"
+		c.LangProperties.CompileRule.Compiler = "/usr/bin/gcc"
+		c.LangProperties.CompileRule.CompileOption = []string{c.LangProperties.SourcePath, "-o", c.LangProperties.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=c11"}
+		c.LangProperties.ExecuteRule.Cmd = c.LangProperties.BinaryPath
+		break
+	case CXX:
+		c.LangProperties.SourcePath += ".cpp"
+		c.LangProperties.CompileRule.Compiler = "/usr/bin/g++"
+		c.LangProperties.CompileRule.CompileOption = []string{c.LangProperties.SourcePath, "-o", c.LangProperties.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=gnu++98"}
+		c.LangProperties.ExecuteRule.Cmd = c.LangProperties.BinaryPath
+		break
+	case JAVA:
+		break
+	case PYTHON2:
+		c.LangProperties.SourcePath += ".py"
+		c.LangProperties.CompileRule.Compiler = "/usr/bin/python"
+		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
+		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python"
+		c.LangProperties.ExecuteRule.CmdOption = []string{c.LangProperties.SourcePath}
+		break
+	case PYTHON3:
+		c.LangProperties.SourcePath += ".py"
+		c.LangProperties.CompileRule.Compiler = "/usr/bin/python3"
+		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
+		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python3"
+		c.LangProperties.ExecuteRule.CmdOption = []string{c.LangProperties.SourcePath}
+		break
+	case GOLANG:
+		break
+	case RUST:
+		break
+	default:
+		return errors.New("Does not support language type.")
+	}
+	return nil
 }
