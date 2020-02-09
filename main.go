@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
+	"github.com/julienschmidt/httprouter"
+	"github.com/urfave/negroni"
 )
 
 const sockBufSize int = 1024
@@ -38,4 +40,8 @@ func main() {
 		}
 		newService(sock, ps.ByName("cable_id"))
 	})
+
+	n := negroni.Classic()
+	n.UseHandler(router)
+	n.Run(":3000")
 }
