@@ -2,15 +2,24 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/mholt/binding"
 	"gopkg.in/mgo.v2/bson"
+)
+
+// 언어 종류에 대한 목록
+const (
+	C = iota
+	CXX
+	JAVA
+	PYTHON2
+	PYTHON3
+	GOLANG
+	RUST
 )
 
 // CompileRequest 컴파일 정보를 위한 구조체
@@ -34,59 +43,30 @@ func (c *CompileRequest) FieldMap(r *http.Request) binding.FieldMap {
 func (c *CompileRequest) create() {
 	c.ID = bson.NewObjectId()
 	c.CreatedAt = time.Now()
+	c.LangProperties.init()
 }
 
-// 언어 종류에 대한 목록
-const (
-	C = iota
-	CXX
-	JAVA
-	PYTHON2
-	PYTHON3
-	GOLANG
-	RUST
-)
-
-func compiler(cr *CompileRequest, s *Service) (error, error) {
+func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 	// 컴파일할 소스코드를 파일에 작성.
-	fd, err := os.OpenFile(cr.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
+	fd, err := os.OpenFile(c.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
 	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return nil
 	}
 	defer fd.Close()
 
 	w := bufio.NewWriter(fd)
-	if _, err := w.WriteString(cr.SourceCode); err != nil {
-		return nil, err
+	if _, err := w.WriteString(c.SourceCode); err != nil {
+		return nil
 	}
 	if err := w.Flush(); err != nil {
-		return nil, err
+		return nil
 	}
 
-	var cstdout bytes.Buffer
-	var cstderr bytes.Buffer
-	res := &ExecuteResponse{}
+	er := &ExecuteResponse{}
+	_, er.CompileOut, er.CompileErr = c.LangProperties.CompileRule.Run()
+	_, er.ExecuteOut, er.ExecuteErr = c.LangProperties.ExecuteRule.Run()
+	os.RemoveAll(c.LangProperties.BasePath)
 
-	// Compile
-	ccmd := exec.Command(cr.LangProperties.CompileRule.Compiler, cr.LangProperties.CompileRule.CompileOption...)
-	ccmd.Stderr = &cstderr
-	ccmd.Stdout = &cstdout
-	compileErr := ccmd.Run()
-	res.CompileErr = cstderr.String()
-	res.CompileOut = cstdout.String()
-
-	var estdout bytes.Buffer
-	var estderr bytes.Buffer
-	// Execute
-	ecmd := exec.Command(cr.LangProperties.ExecuteRule.Cmd, cr.LangProperties.ExecuteRule.CmdOption)
-	ecmd.Stderr = &estderr
-	ecmd.Stdout = &estdout
-	executeErr := ecmd.Run()
-	res.ExecuteErr = estderr.String()
-	res.ExecuteOut = estdout.String()
-
-	s.Send <- res
-
-	return compileErr, executeErr
+	return er
 }
