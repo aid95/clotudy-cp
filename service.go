@@ -21,15 +21,14 @@ type Service struct {
 
 // ExecuteResponse
 type ExecuteResponse struct {
-	ExecuteOut string
-	ExecuteErr string
-	CompileOut string
-	CompileErr string
-	Err        string
-	CPUTime    int
-	MemSize    int
-	ExitCode   int
-	CableID    bson.ObjectId
+	ExecuteOut string        `bson:"exec_stdout" json:"exec_stdout"`
+	ExecuteErr string        `bson:"exec_stderr" json:"exec_stderr"`
+	CompileOut string        `bson:"compile_stdout" json:"compile_stdout"`
+	CompileErr string        `bson:"compile_stderr" json:"compile_stderr"`
+	CPUTime    int           `bson:"cpu_time" json:"cpu_time"`
+	MemSize    int           `bson:"mem_size" json:"mem_size"`
+	ExitCode   int           `bson:"exit_code" json:"exit_code"`
+	CableID    bson.ObjectId `bson:"cable_id" json:"cable_id"`
 }
 
 func newService(conn *websocket.Conn, cableID string) {
@@ -77,14 +76,13 @@ func (s *Service) readLoop() {
 
 // 소켓으로 데이터를 받아 반환
 func (s *Service) read() error {
-	var cr *CompileRequest
-	cr.create()
-
 	// 데이터를 CompileRequest 에 저장
+	var cr *CompileRequest
 	if err := s.Conn.ReadJSON(&cr); err != nil {
 		log.Fatal(err)
 		return err
 	}
+	cr.create()
 
 	s.Send <- cr.CompileAndRun()
 	return nil
