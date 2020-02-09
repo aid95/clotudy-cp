@@ -78,16 +78,15 @@ func (s *Service) readLoop() {
 // 소켓으로 데이터를 받아 반환
 func (s *Service) read() error {
 	var cr *CompileRequest
-	// Json 데이터를 CompileRequest 에 저장
+	cr.create()
+
+	// 데이터를 CompileRequest 에 저장
 	if err := s.Conn.ReadJSON(&cr); err != nil {
 		log.Fatal(err)
 		return err
 	}
-	if err := cr.LangProperties.init(); err != nil {
-		log.Fatal(err)
-		return err
-	}
-	compiler(cr, s)
+
+	s.Send <- cr.CompileAndRun()
 	return nil
 }
 
