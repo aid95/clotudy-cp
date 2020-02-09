@@ -21,8 +21,6 @@ func MakePathDir(path string) (string, error) {
 		if os.IsNotExist(err) {
 			os.MkdirAll(path, os.ModePerm)
 		}
-	} else {
-		return "", err
 	}
 	return path, nil
 }
