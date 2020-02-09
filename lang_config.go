@@ -12,7 +12,7 @@ type LangProperties struct {
 	CompileRule CompileRule `bson:"compile_rule" json:"compile_rule"`
 	BasePath    string      `bson:"base_path" json:"base_path"`
 	SourcePath  string      `bson:"src_path" json:"src_path"`
-	BinaryPath	string		`bson:"bin_path" json:"bin_path"`
+	BinaryPath  string      `bson:"bin_path" json:"bin_path"`
 }
 
 func (l *LangProperties) init() error {
@@ -31,11 +31,15 @@ func (l *LangProperties) init() error {
 	switch l.CompileRule.LangType {
 	case C:
 		l.SourcePath += ".c"
-		l.CompileRule.Cmd = fmt.Sprintf("gcc %s -o %s -O2 -Wall -lm -static -std=c11", l.SourcePath, l.BinaryPath)
+		l.CompileRule.Compiler = "/usr/bin/gcc"
+		l.CompileRule.CompileOption = []string{l.SourcePath, "-o", l.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=c11"}
+		l.ExecuteRule.Cmd = l.BinaryPath
 		break
 	case CXX:
 		l.SourcePath += ".cpp"
-		l.CompileRule.Cmd = fmt.Sprintf("g++ %s -o %s -O2 -Wall -lm -static -std=gnu++98", l.SourcePath, l.BinaryPath)
+		l.CompileRule.Compiler = "/usr/bin/g++"
+		l.CompileRule.CompileOption = []string{l.SourcePath, "-o", l.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=gnu++98"}
+		l.ExecuteRule.Cmd = l.BinaryPath
 		break
 	case JAVA:
 		break
@@ -55,14 +59,16 @@ func (l *LangProperties) init() error {
 // ExecuteRule 실행을 위한 정보
 type ExecuteRule struct {
 	Cmd        string `bson:"command_line" json:"command_line"`
+	CmdOption  string `bson:"command_option" json:"command_option"`
 	MaxMem     int64  `bson:"max_memory" json:"max_memory"`
 	MaxCPUTime int64  `bson:"max_cpu_time" json:"max_cpu_time"`
 }
 
 // CompileRule 컴파일 조건 및 명령행을 위한 정보
 type CompileRule struct {
-	Cmd         string `bson:"command_line" json:"command_line"`
-	MaxFileSize int64  `bson:"max_file_size" json:"max_file_size"`
-	SourceCode  string `bson:"source_code" json:"source_code"`
-	LangType    int    `bson:"source_type" json:"source_type"`
+	Compiler      string   `bson:"lang_compiler" json:"lang_compiler"`
+	CompileOption []string `bson:"compile_arg" json:"compile_arg"`
+	MaxFileSize   int64    `bson:"max_file_size" json:"max_file_size"`
+	SourceCode    string   `bson:"source_code" json:"source_code"`
+	LangType      int      `bson:"source_type" json:"source_type"`
 }
