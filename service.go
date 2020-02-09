@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/gorilla/websocket"
+	"gopkg.in/mgo.v2/bson"
+	"log"
 )
 
 const compileBufferSize = 256
@@ -11,9 +13,11 @@ var services []*Service
 
 // Service 요청된 컴파일 서비스 정보
 type Service struct {
-	conn    *websocket.Conn
-	send    chan *CompileRequest
-	cableID string
+	Conn    *websocket.Conn
+	Send    chan *ExecuteResponse
+	CableID string
+}
+
 type ExecuteResponse struct {
 	ExecuteOut string
 	CompileOut string
@@ -27,9 +31,9 @@ type ExecuteResponse struct {
 func newService(conn *websocket.Conn, requestID string) {
 	// 새로운 서비스 생성
 	s := &Service{
-		conn:    conn,
-		send:    make(chan *CompileRequest, compileBufferSize),
-		cableID: requestID,
+		Conn:    conn,
+		Send:    make(chan *ExecuteResponse, compileBufferSize),
+		CableID: requestID,
 	}
 	// 서비스 목록에 추가
 	services = append(services, s)
@@ -48,38 +52,21 @@ func (s *Service) Close() {
 			break
 		}
 	}
-
 	// 서비스의 channel 닫기
-	close(s.send)
-
+	close(s.Send)
 	// 서비스 연결 종료.
-	s.conn.Close()
-}
-
-// 소켓으로 데이터를 받아 반환
-func (s *Service) read() (*CompileRequest, error) {
-	var compile *CompileRequest
-	// Json 데이터를 CompileRequest 에 저장
-	if err := s.conn.ReadJSON(&compile); err != nil {
-		return nil, err
+	if err := s.Conn.Close(); err != nil {
+		log.Fatal(err)
 	}
-	return compile, nil
-}
-
-// 데이터를 Json 타입으로 전송
-func (s *Service) write(m *CompileRequest) error {
-	return s.conn.WriteJSON(m)
 }
 
 // 수신을 위한 루프
 func (s *Service) readLoop() {
 	for {
-		c, err := s.read()
+		err := s.read()
 		if err != nil {
 			break
 		}
-		c.create()
-		broadcast(c)
 	}
 	s.Close()
 }
@@ -102,19 +89,18 @@ func (s *Service) read() error {
 	}
 	return nil
 }
+
 // 송신을 위한 루프
 func (s *Service) writeLoop() {
-	for c := range s.send {
+	for c := range s.Send {
 		// channel 로 부터 받은 데이터를 적절한 requestID에 전송.
-		if s.cableID == c.CableID.Hex() {
+		if s.CableID == c.CableID.Hex() {
 			s.write(c)
 		}
 	}
 }
 
-// 1:N 통신을 위한 broadcast, 이후 services 를 map 으로 변경해 1:1 형태로 변형 해야함.
-func broadcast(c *CompileRequest) {
-	for _, service := range services {
-		service.send <- c
-	}
+// 데이터를 Json 타입으로 전송
+func (s *Service) write(m *ExecuteResponse) error {
+	return s.Conn.WriteJSON(m)
 }
