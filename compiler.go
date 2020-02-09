@@ -36,58 +36,39 @@ const (
 	RUST
 )
 
-func compiler(req *CompileRequest) {
-	// 언어에 따라 소스코드 파일 확장자 및 파일 이름 구성
-	ext, err := languageExtension(req.LangType)
+func compiler(cr *CompileRequest, s *Service) error {
+	// 컴파일할 소스코드를 파일에 작성.
+	p := filepath.Join(cr.LangProperties.BasePath, cr.LangProperties.SourcePath)
+	fd, err := os.OpenFile(p, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
 	if err != nil {
 		log.Fatal(err)
-	}
-	filename := Md5HashGen("code") + ext
-
-	// 폴더 생성
-	path, err := MakePathDir(filepath.Join(BaseDirPath, Md5HashGen("test")))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fullpath := filepath.Join(path, filename)
-	fd, err := os.OpenFile(fullpath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
-	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer fd.Close()
 
 	w := bufio.NewWriter(fd)
-	w.WriteString(req.SourceCode)
-	w.Flush()
-}
-
-func languageExtension(langtype int) (string, error) {
-	var ext string
-	switch langtype {
-	case C:
-		ext = ".c"
-		break
-	case CXX:
-		ext = ".cpp"
-		break
-	case JAVA:
-		ext = ".java"
-		break
-	case PYTHON2:
-	case PYTHON3:
-		ext = ".py"
-		break
-	case GOLANG:
-		ext = ".go"
-		break
-	case RUST:
-		ext = ".rs"
-		break
-
-	default:
-		return "", errors.New("Does not support language type")
+	if _, err := w.WriteString(cr.LangProperties.CompileRule.SourceCode); err != nil {
+		return err
+	}
+	if err := w.Flush(); err != nil {
+		return err
 	}
 
-	return ext, nil
+	res := &ExecuteResponse{}
+	if out, err := exec.Command(cr.LangProperties.CompileRule.Cmd).Output(); err != nil {
+		log.Fatal(err)
+		return err
+	} else {
+		res.CompileOut = string(out)
+	}
+
+	if out, err := exec.Command(cr.LangProperties.ExecuteRule.Cmd).Output(); err != nil {
+		log.Fatal(err)
+		return err
+	} else {
+		res.ExecuteOut = string(out)
+	}
+	s.Send <- res
+
+	return nil
 }

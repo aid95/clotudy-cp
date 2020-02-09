@@ -84,6 +84,24 @@ func (s *Service) readLoop() {
 	s.Close()
 }
 
+// 소켓으로 데이터를 받아 반환
+func (s *Service) read() error {
+	var cr *CompileRequest
+	// Json 데이터를 CompileRequest 에 저장
+	if err := s.Conn.ReadJSON(&cr); err != nil {
+		log.Fatal(err)
+		return err
+	}
+	if err := cr.LangProperties.init(); err != nil {
+		log.Fatal(err)
+		return err
+	}
+	if err := compiler(cr, s); err != nil {
+		log.Fatal(err)
+		return err
+	}
+	return nil
+}
 // 송신을 위한 루프
 func (s *Service) writeLoop() {
 	for c := range s.send {
