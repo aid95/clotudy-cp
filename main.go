@@ -14,7 +14,6 @@ const sockBufSize int = 1024
 
 var (
 	upgrader = &websocket.Upgrader{
-		HandshakeTimeout:  5,
 		ReadBufferSize:    sockBufSize,
 		WriteBufferSize:   sockBufSize,
 		WriteBufferPool:   nil,
