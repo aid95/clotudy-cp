@@ -14,6 +14,14 @@ type Service struct {
 	conn    *websocket.Conn
 	send    chan *CompileRequest
 	cableID string
+type ExecuteResponse struct {
+	ExecuteOut string
+	CompileOut string
+	Err        string
+	CpuTime    int
+	MemSize    int
+	ExitCode   int
+	CableID    bson.ObjectId
 }
 
 func newService(conn *websocket.Conn, requestID string) {
