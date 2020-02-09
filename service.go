@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gorilla/websocket"
 	"gopkg.in/mgo.v2/bson"
-	"log"
 )
 
 const compileBufferSize = 256
@@ -18,22 +19,25 @@ type Service struct {
 	CableID string
 }
 
+// ExecuteResponse
 type ExecuteResponse struct {
 	ExecuteOut string
+	ExecuteErr string
 	CompileOut string
+	CompileErr string
 	Err        string
-	CpuTime    int
+	CPUTime    int
 	MemSize    int
 	ExitCode   int
 	CableID    bson.ObjectId
 }
 
-func newService(conn *websocket.Conn, requestID string) {
+func newService(conn *websocket.Conn, cableID string) {
 	// 새로운 서비스 생성
 	s := &Service{
 		Conn:    conn,
 		Send:    make(chan *ExecuteResponse, compileBufferSize),
-		CableID: requestID,
+		CableID: cableID,
 	}
 	// 서비스 목록에 추가
 	services = append(services, s)
@@ -83,20 +87,14 @@ func (s *Service) read() error {
 		log.Fatal(err)
 		return err
 	}
-	if err := compiler(cr, s); err != nil {
-		log.Fatal(err)
-		return err
-	}
+	compiler(cr, s)
 	return nil
 }
 
 // 송신을 위한 루프
 func (s *Service) writeLoop() {
 	for c := range s.Send {
-		// channel 로 부터 받은 데이터를 적절한 requestID에 전송.
-		if s.CableID == c.CableID.Hex() {
-			s.write(c)
-		}
+		s.write(c)
 	}
 }
 
