@@ -2,27 +2,35 @@ package main
 
 import (
 	"bufio"
-	"errors"
+	"github.com/mholt/binding"
+	"gopkg.in/mgo.v2/bson"
 	"log"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"time"
 )
 
-// CompileResult 컴파일 결과에 대한 정보
-type CompileResult struct {
-	src           string
-	err           string
-	compiletime   int32
-	langtype      int32
-	ExecuteResult ExecuteResult
+// CompileRequest 컴파일 정보를 위한 구조체
+type CompileRequest struct {
+	ID             bson.ObjectId  `bson:"_id" json:"id"`
+	CreatedAt      time.Time      `bson:"created_at" json:"created_at"`
+	CableID        bson.ObjectId  `bson:"request_id" json:"request_id"`
+	LangProperties LangProperties `bson:"lang_properties" json:"lang_properties"`
 }
 
-// ExecuteResult 실행 결과에 대한 정보
-type ExecuteResult struct {
-	in      string
-	out     string
-	cputime int32
-	memsize int32
+// FieldMap 웹소켓으로 보내진 데이터를 CompileRequest 구조체의 요소와 맵핑
+func (c *CompileRequest) FieldMap(r *http.Request) binding.FieldMap {
+	return binding.FieldMap{
+		&c.LangProperties.CompileRule.SourceCode: "src",
+		&c.LangProperties.CompileRule.LangType:   "type",
+	}
+}
+
+func (c *CompileRequest) create() {
+	c.ID = bson.NewObjectId()
+	c.CreatedAt = time.Now()
 }
 
 // 언어 종류에 대한 목록
