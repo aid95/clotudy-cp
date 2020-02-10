@@ -111,12 +111,19 @@ func (c *CompileRequest) init() error {
 		break
 	case PYTHON3:
 		c.LangProperties.SourcePath += ".py"
+
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/python3"
 		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
 		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python3"
 		c.LangProperties.ExecuteRule.CmdOption = []string{c.LangProperties.SourcePath}
 		break
 	case GOLANG:
+		c.LangProperties.SourcePath += ".go"
+
+		c.LangProperties.CompileRule.Compiler = "/usr/bin/go"
+		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
+		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python3"
+		c.LangProperties.ExecuteRule.CmdOption = []string{c.LangProperties.SourcePath}
 		break
 	case RUST:
 		break
