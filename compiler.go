@@ -84,26 +84,35 @@ func (c *CompileRequest) init() error {
 	MakePathDir(filepath.Join(path, "bin"))
 
 	// 컴파일 시 필요한 파일 이름, 확장자, 경로 등을 설정
+	// 실행 시간, 메모리 제한을 위한 timeout 설치
+	// COMMAND:
+	//  curl https://raw.githubusercontent.com/pshved/timeout/master/timeout | \
+	//  sudo tee /usr/bin/timeout && sudo chmod 755 /usr/bin/timeout"
 	c.LangProperties.BasePath = path
 	c.LangProperties.SourcePath = fmt.Sprintf("%s/src/%s", c.LangProperties.BasePath, filename)
 	c.LangProperties.BinaryPath = fmt.Sprintf("%s/bin/%s", c.LangProperties.BasePath, filename)
 	switch c.SourceType {
 	case C:
 		c.LangProperties.SourcePath += ".c"
+
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/gcc"
 		c.LangProperties.CompileRule.CompileOption = []string{c.LangProperties.SourcePath, "-o", c.LangProperties.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=c11"}
-		c.LangProperties.ExecuteRule.Cmd = c.LangProperties.BinaryPath
+		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/timeout"
+		c.LangProperties.ExecuteRule.CmdOption = []string{"-m", "500", "-t", "3", c.LangProperties.BinaryPath}
 		break
 	case CXX:
 		c.LangProperties.SourcePath += ".cpp"
+
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/g++"
 		c.LangProperties.CompileRule.CompileOption = []string{c.LangProperties.SourcePath, "-o", c.LangProperties.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=gnu++98"}
-		c.LangProperties.ExecuteRule.Cmd = c.LangProperties.BinaryPath
+		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/timeout"
+		c.LangProperties.ExecuteRule.CmdOption = []string{"-m", "500", "-t", "3", c.LangProperties.BinaryPath}
 		break
 	case JAVA:
 		break
 	case PYTHON2:
 		c.LangProperties.SourcePath += ".py"
+
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/python"
 		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
 		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python"
