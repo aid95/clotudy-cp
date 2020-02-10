@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/gorilla/websocket"
 	"gopkg.in/mgo.v2/bson"
@@ -59,7 +59,7 @@ func (s *Service) Close() {
 	close(s.Send)
 	// 서비스 연결 종료.
 	if err := s.Conn.Close(); err != nil {
-		log.Fatal(err)
+		fmt.Println("Connection close", err)
 	}
 }
 
@@ -79,7 +79,6 @@ func (s *Service) read() error {
 	// 데이터를 CompileRequest 에 저장
 	var cr *CompileRequest
 	if err := s.Conn.ReadJSON(&cr); err != nil {
-		log.Fatal(err)
 		return err
 	}
 	cr.create()
