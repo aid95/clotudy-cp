@@ -50,7 +50,9 @@ func RunCommandLine(cmdline string, arg []string, input string) (error, string, 
 	if err = cmd.Start(); err != nil { //Use start, not run
 		fmt.Println("An error occured: ", err) //replace with logger, or anything you want
 	}
-	io.WriteString(stdin, input)
+	if len(input) > 0 {
+		io.WriteString(stdin, input)
+	}
 	cmd.Wait()
 
 	return err, stdout.String(), stderr.String()
