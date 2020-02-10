@@ -34,12 +34,24 @@ func Md5HashGen(plaintxt string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func RunCommandLine(cmdline string, arg []string) (error, string, string) {
+func RunCommandLine(cmdline string, arg []string, input string) (error, string, string) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd := exec.Command(cmdline, arg...)
+
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
-	err := cmd.Run()
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer stdin.Close()
+
+	if err = cmd.Start(); err != nil { //Use start, not run
+		fmt.Println("An error occured: ", err) //replace with logger, or anything you want
+	}
+	io.WriteString(stdin, input)
+	cmd.Wait()
+
 	return err, stdout.String(), stderr.String()
 }
