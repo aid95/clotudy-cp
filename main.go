@@ -19,7 +19,7 @@ var (
 		WriteBufferPool:   nil,
 		Subprotocols:      nil,
 		Error:             nil,
-		CheckOrigin:       nil,
+		CheckOrigin:       func(r *http.Request) bool { return true },
 		EnableCompression: false,
 	}
 )
