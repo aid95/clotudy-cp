@@ -34,7 +34,8 @@ func Md5HashGen(plaintxt string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func RunCommandLine(cmdline string, arg []string, input string) (error, string, string) {
+// RunCommandLine 명령행, 실행 인자를 받아 실행 후 표준 입력/출력/에러를 반환하는 함수.
+func RunCommandLine(cmdline string, arg []string, input string) (string, string, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd := exec.Command(cmdline, arg...)
@@ -55,5 +56,5 @@ func RunCommandLine(cmdline string, arg []string, input string) (error, string, 
 	}
 	cmd.Wait()
 
-	return err, stdout.String(), stderr.String()
+	return stdout.String(), stderr.String(), err
 }

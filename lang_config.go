@@ -17,7 +17,8 @@ type ExecuteRule struct {
 	MaxCPUTime int64    `bson:"max_cpu_time" json:"max_cpu_time"`
 }
 
-func (e *ExecuteRule) Run(input string) (error, string, string) {
+// Run Cmd 명령행을 실행
+func (e *ExecuteRule) Run(input string) (string, string, error) {
 	return RunCommandLine(e.Cmd, e.CmdOption, input)
 }
 
@@ -30,6 +31,7 @@ type CompileRule struct {
 	LangType      int      `bson:"source_type" json:"source_type"`
 }
 
-func (c *CompileRule) Run(input string) (error, string, string) {
+// Run Compiler 명령행 실행
+func (c *CompileRule) Run(input string) (string, string, error) {
 	return RunCommandLine(c.Compiler, c.CompileOption, input)
 }

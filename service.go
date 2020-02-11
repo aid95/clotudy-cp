@@ -19,7 +19,7 @@ type Service struct {
 	CableID string
 }
 
-// ExecuteResponse
+// ExecuteResponse 컴파일 및 실행 결과를 담을 구조체
 type ExecuteResponse struct {
 	ExecuteOut string        `bson:"exec_stdout" json:"exec_stdout"`
 	ExecuteErr string        `bson:"exec_stderr" json:"exec_stderr"`

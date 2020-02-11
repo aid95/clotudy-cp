@@ -49,6 +49,7 @@ func (c *CompileRequest) create() {
 	c.init()
 }
 
+// CompileAndRun 컴파일과 실행을 통해 결과를 반환하는 함수
 func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 	// 컴파일할 소스코드를 파일에 작성.
 	fd, err := os.OpenFile(c.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
@@ -67,8 +68,8 @@ func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 	}
 
 	er := &ExecuteResponse{}
-	_, er.CompileOut, er.CompileErr = c.LangProperties.CompileRule.Run("")
-	_, er.ExecuteOut, er.ExecuteErr = c.LangProperties.ExecuteRule.Run("hello\n")
+	er.CompileOut, er.CompileErr, _ = c.LangProperties.CompileRule.Run("")
+	er.ExecuteOut, er.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run("hello\n")
 	// os.RemoveAll(c.LangProperties.BasePath)
 
 	return er
