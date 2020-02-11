@@ -32,9 +32,10 @@ func main() {
 
 	router := httprouter.New()
 	router.GET("/cp/:cable_id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		fmt.Println("Websocket access request.")
 		sock, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			log.Fatal("ServerHTTP:", err)
+			fmt.Println("ServerHTTP:", err)
 			return
 		}
 		newService(sock, ps.ByName("cable_id"))
