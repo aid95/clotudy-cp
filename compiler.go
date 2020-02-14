@@ -70,7 +70,7 @@ func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 	er := &ExecuteResponse{}
 	er.CompileOut, er.CompileErr, _ = c.LangProperties.CompileRule.Run("")
 	er.ExecuteOut, er.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run("hello\n")
-	// os.RemoveAll(c.LangProperties.BasePath)
+	os.RemoveAll(c.LangProperties.BasePath)
 
 	return er
 }
