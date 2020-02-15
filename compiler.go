@@ -138,7 +138,7 @@ func (c *CompileRequest) init() error {
 	case RUST:
 		break
 	default:
-		return errors.New("Does not support language type.")
+		return fmt.Errorf("Language type %d does not supported", c.SourceType)
 	}
 	return nil
 }
