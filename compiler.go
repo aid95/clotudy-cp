@@ -52,22 +52,6 @@ func (c *CompileRequest) create(cableID string) {
 
 // CompileAndRun 컴파일과 실행을 통해 결과를 반환하는 함수
 func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
-	// 컴파일할 소스코드를 파일에 작성.
-	fd, err := os.OpenFile(c.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
-	if err != nil {
-		log.Fatal(err)
-		return nil
-	}
-	defer fd.Close()
-
-	w := bufio.NewWriter(fd)
-	if _, err := w.WriteString(c.SourceCode); err != nil {
-		return nil
-	}
-	if err := w.Flush(); err != nil {
-		return nil
-	}
-
 	er := &ExecuteResponse{}
 	er.CompileOut, er.CompileErr, _ = c.LangProperties.CompileRule.Run("")
 	er.ExecuteOut, er.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run(c.StandardInput)
@@ -142,5 +126,22 @@ func (c *CompileRequest) init() error {
 	default:
 		return fmt.Errorf("Language type %d does not supported", c.SourceType)
 	}
+
+	// 컴파일할 소스코드를 파일에 작성.
+	fd, err := os.OpenFile(c.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	defer fd.Close()
+
+	w := bufio.NewWriter(fd)
+	if _, err := w.WriteString(c.SourceCode); err != nil {
+		return err
+	}
+	if err := w.Flush(); err != nil {
+		return err
+	}
+
 	return nil
 }
