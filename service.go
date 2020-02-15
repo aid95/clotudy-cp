@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gorilla/websocket"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const compileBufferSize = 256
@@ -21,14 +20,13 @@ type Service struct {
 
 // ExecuteResponse 컴파일 및 실행 결과를 담을 구조체
 type ExecuteResponse struct {
-	ExecuteOut string        `bson:"exec_stdout" json:"exec_stdout"`
-	ExecuteErr string        `bson:"exec_stderr" json:"exec_stderr"`
-	CompileOut string        `bson:"compile_stdout" json:"compile_stdout"`
-	CompileErr string        `bson:"compile_stderr" json:"compile_stderr"`
-	CPUTime    int           `bson:"cpu_time" json:"cpu_time"`
-	MemSize    int           `bson:"mem_size" json:"mem_size"`
-	ExitCode   int           `bson:"exit_code" json:"exit_code"`
-	CableID    bson.ObjectId `bson:"cable_id" json:"cable_id"`
+	ExecuteOut string `bson:"exec_stdout" json:"exec_stdout"`
+	ExecuteErr string `bson:"exec_stderr" json:"exec_stderr"`
+	CompileOut string `bson:"compile_stdout" json:"compile_stdout"`
+	CompileErr string `bson:"compile_stderr" json:"compile_stderr"`
+	CPUTime    int    `bson:"cpu_time" json:"cpu_time"`
+	MemSize    int    `bson:"mem_size" json:"mem_size"`
+	ExitCode   int    `bson:"exit_code" json:"exit_code"`
 }
 
 func newService(conn *websocket.Conn, cableID string) {
@@ -81,7 +79,7 @@ func (s *Service) read() error {
 	if err := s.Conn.ReadJSON(&cr); err != nil {
 		return err
 	}
-	cr.create()
+	cr.create(s.CableID)
 
 	s.Send <- cr.CompileAndRun()
 	return nil

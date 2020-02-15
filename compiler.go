@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -29,7 +28,7 @@ const (
 type CompileRequest struct {
 	ID             bson.ObjectId  `bson:"_id" json:"id"`
 	CreatedAt      time.Time      `bson:"created_at" json:"created_at"`
-	CableID        bson.ObjectId  `bson:"request_id" json:"request_id"`
+	CableID        string         `bson:"request_id" json:"request_id"`
 	SourceCode     string         `bson:"src" json:"src"`
 	SourceType     int            `bson:"type" json:"type"`
 	LangProperties LangProperties `bson:"lang_properties" json:"lang_properties"`
@@ -43,9 +42,10 @@ func (c *CompileRequest) FieldMap(r *http.Request) binding.FieldMap {
 	}
 }
 
-func (c *CompileRequest) create() {
+func (c *CompileRequest) create(cableID string) {
 	c.ID = bson.NewObjectId()
 	c.CreatedAt = time.Now()
+	c.CableID = cableID
 	c.init()
 }
 
@@ -76,8 +76,9 @@ func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 }
 
 func (c *CompileRequest) init() error {
-	filename := Md5HashGen("code")
-	path, err := MakePathDir(filepath.Join(BaseDirPath, Md5HashGen("test")))
+	// 컴파일 작업을 하기 위해성 소스코드 폴더와 바이너리 폴더를 생성
+	filename := Md5HashGen(c.SourceCode)
+	path, err := MakePathDir(filepath.Join(GlobalBaseDirPath, Md5HashGen(c.CableID)))
 	if err != nil {
 		return err
 	}
