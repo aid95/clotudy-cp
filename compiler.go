@@ -31,6 +31,7 @@ type CompileRequest struct {
 	CableID        string         `bson:"request_id" json:"request_id"`
 	SourceCode     string         `bson:"src" json:"src"`
 	SourceType     int            `bson:"type" json:"type"`
+	StandardInput  string         `bson:"input" json:"input"`
 	LangProperties LangProperties `bson:"lang_properties" json:"lang_properties"`
 }
 
@@ -69,7 +70,7 @@ func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 
 	er := &ExecuteResponse{}
 	er.CompileOut, er.CompileErr, _ = c.LangProperties.CompileRule.Run("")
-	er.ExecuteOut, er.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run("hello\n")
+	er.ExecuteOut, er.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run(c.StandardInput)
 	os.RemoveAll(c.LangProperties.BasePath)
 
 	return er
