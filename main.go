@@ -24,11 +24,10 @@ var (
 )
 
 func init() {
+	fmt.Println("Compiler service start...")
 }
 
 func main() {
-	fmt.Println("Compiler service start...")
-
 	router := httprouter.New()
 	router.GET("/cp/:cable_id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		fmt.Println("Websocket access request.")
