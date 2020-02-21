@@ -43,6 +43,7 @@ func (c *CompileRequest) FieldMap(r *http.Request) binding.FieldMap {
 	}
 }
 
+// create 컴파일 요청 수행을 위한 CompileRequest 생성
 func (c *CompileRequest) create(cableID string) {
 	c.ID = bson.NewObjectId()
 	c.CreatedAt = time.Now()
