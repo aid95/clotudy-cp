@@ -53,12 +53,12 @@ func (c *CompileRequest) create(cableID string) {
 
 // CompileAndRun 컴파일과 실행을 통해 결과를 반환하는 함수
 func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
-	er := &ExecuteResponse{}
-	er.CompileOut, er.CompileErr, _ = c.LangProperties.CompileRule.Run("")
-	er.ExecuteOut, er.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run(c.StandardInput)
+	r := &ExecuteResponse{}
+	r.CompileOut, r.CompileErr, _ = c.LangProperties.CompileRule.Run("")
+	r.ExecuteOut, r.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run(c.StandardInput)
 	os.RemoveAll(c.LangProperties.BasePath)
 
-	return er
+	return r
 }
 
 func (c *CompileRequest) init() error {
