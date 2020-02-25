@@ -128,20 +128,23 @@ func (c *CompileRequest) init() error {
 		return fmt.Errorf("Language type %d does not supported", c.SourceType)
 	}
 
-	// 컴파일할 소스코드를 파일에 작성.
-	fd, err := os.OpenFile(c.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
-	if err != nil {
-		log.Fatal(err)
-		return nil
-	}
-	defer fd.Close()
+	info, err := os.Stat(c.LangProperties.SourcePath)
+	if os.IsNotExist(err) {
+		// 컴파일할 소스코드를 파일에 작성.
+		fd, err := os.OpenFile(c.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
+		if err != nil {
+			log.Fatal(err)
+			return nil
+		}
+		defer fd.Close()
 
-	w := bufio.NewWriter(fd)
-	if _, err := w.WriteString(c.SourceCode); err != nil {
-		return err
-	}
-	if err := w.Flush(); err != nil {
-		return err
+		w := bufio.NewWriter(fd)
+		if _, err := w.WriteString(c.SourceCode); err != nil {
+			return err
+		}
+		if err := w.Flush(); err != nil {
+			return err
+		}
 	}
 
 	return nil
