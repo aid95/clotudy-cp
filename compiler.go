@@ -38,8 +38,9 @@ type CompileRequest struct {
 // FieldMap 웹소켓으로 보내진 데이터를 CompileRequest 구조체의 요소와 맵핑
 func (c *CompileRequest) FieldMap(r *http.Request) binding.FieldMap {
 	return binding.FieldMap{
-		&c.SourceCode: "src",
-		&c.SourceType: "type",
+		&c.SourceCode:    "src",
+		&c.SourceType:    "type",
+		&c.StandardInput: "input",
 	}
 }
 
@@ -54,10 +55,13 @@ func (c *CompileRequest) create(cableID string) {
 // CompileAndRun 컴파일과 실행을 통해 결과를 반환하는 함수
 func (c *CompileRequest) CompileAndRun() *ExecuteResponse {
 	r := &ExecuteResponse{}
-	r.CompileOut, r.CompileErr, _ = c.LangProperties.CompileRule.Run("")
-	r.ExecuteOut, r.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run(c.StandardInput)
-	os.RemoveAll(c.LangProperties.BasePath)
-
+	if _, err := os.Stat(c.LangProperties.SourcePath); os.IsExist(err) {
+		r.CompileOut, r.CompileErr, _ = c.LangProperties.CompileRule.Run("")
+		if _, err := os.Stat(c.LangProperties.BinaryPath); os.IsExist(err) {
+			r.ExecuteOut, r.ExecuteErr, _ = c.LangProperties.ExecuteRule.Run(c.StandardInput)
+		}
+		os.RemoveAll(c.LangProperties.BasePath)
+	}
 	return r
 }
 
@@ -82,53 +86,54 @@ func (c *CompileRequest) init() error {
 	switch c.SourceType {
 	case C:
 		c.LangProperties.SourcePath += ".c"
-
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/gcc"
 		c.LangProperties.CompileRule.CompileOption = []string{c.LangProperties.SourcePath, "-o", c.LangProperties.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=c11"}
 		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/timeout"
 		c.LangProperties.ExecuteRule.CmdOption = []string{"-m", "500", "-t", "3", c.LangProperties.BinaryPath}
 		break
+
 	case CXX:
 		c.LangProperties.SourcePath += ".cpp"
-
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/g++"
 		c.LangProperties.CompileRule.CompileOption = []string{c.LangProperties.SourcePath, "-o", c.LangProperties.BinaryPath, "-O2", "-Wall", "-lm", "-static", "-std=gnu++98"}
 		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/timeout"
 		c.LangProperties.ExecuteRule.CmdOption = []string{"-m", "500", "-t", "3", c.LangProperties.BinaryPath}
 		break
+
 	case JAVA:
 		break
+
 	case PYTHON2:
 		c.LangProperties.SourcePath += ".py"
-
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/python"
 		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
 		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python"
 		c.LangProperties.ExecuteRule.CmdOption = []string{c.LangProperties.SourcePath}
 		break
+
 	case PYTHON3:
 		c.LangProperties.SourcePath += ".py"
-
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/python3"
 		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
 		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python3"
 		c.LangProperties.ExecuteRule.CmdOption = []string{c.LangProperties.SourcePath}
 		break
+
 	case GOLANG:
 		c.LangProperties.SourcePath += ".go"
-
 		c.LangProperties.CompileRule.Compiler = "/usr/bin/go"
 		c.LangProperties.CompileRule.CompileOption = []string{"-c", fmt.Sprintf("\"import py_compile; py_compile.compile(r'%s')\"", c.LangProperties.SourcePath)}
 		c.LangProperties.ExecuteRule.Cmd = "/usr/bin/python3"
 		c.LangProperties.ExecuteRule.CmdOption = []string{c.LangProperties.SourcePath}
 		break
+
 	case RUST:
 		break
+
 	default:
 		return fmt.Errorf("Language type %d does not supported", c.SourceType)
 	}
 
-	info, err := os.Stat(c.LangProperties.SourcePath)
 	if os.IsNotExist(err) {
 		// 컴파일할 소스코드를 파일에 작성.
 		fd, err := os.OpenFile(c.LangProperties.SourcePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644))
